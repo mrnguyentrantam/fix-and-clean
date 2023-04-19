@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  role          Role           @default(USER)
+  workerProfile WorkerProfile?
+  firebaseId    String         @unique
+  createdAt     DateTime       @default(now())
+}
+
+model WorkerProfile {
+  id                        Int                         @id @default(autoincrement())
+  user                      User                        @relation(fields: [userId], references: [id])
+  userId                    Int                         @unique
+  identiTyNumber            String
+  fullName                  String
+  dateOfBirth               String
+  province                  String
+  district                  String
+  permanentAddress          String
+  nation                    String
+  religion                  String
+  identityIssuedDate        String
+  identityIssuedPlace       String
+  frontIdentityCard         String
+  backIdentityCard          String
+  createdAt                 DateTime                    @default(now())
+  isVerified                Boolean
+  workerProfilesOnSkills    WorkerProfilesOnSkills[]
+  workerProfilesOnDictricts WorkerProfilesOnDistricts[]
+}
+
+model SkillCategory {
+  id                     Int                      @id @default(autoincrement())
+  name                   String
+  description            String?
+  skills                 Skill[]
+  skillsOnCategories     SkillsOnCategories[]
+  workerProfilesOnSkills WorkerProfilesOnSkills[]
+}
+
+model Skill {
+  id                     Int                      @id @default(autoincrement())
+  name                   String
+  description            String?
+  skillCategory          SkillCategory            @relation(fields: [skillCategoryId], references: [id])
+  skillCategoryId        Int
+  skillsOnCategories     SkillsOnCategories[]
+  workerProfilesOnSkills WorkerProfilesOnSkills[]
+}
+
+model SkillsOnCategories {
+  skill           Skill         @relation(fields: [skillId], references: [id])
+  skillId         Int // relation scalar field (used in the `@relation` attribute above)
+  skillCategory   SkillCategory @relation(fields: [skillCategoryId], references: [id])
+  skillCategoryId Int // relation scalar field (used in the `@relation` attribute above)
+  description     String?
+
+  @@id([skillId, skillCategoryId])
+}
+
+model WorkerProfilesOnSkills {
+  skill           Skill         @relation(fields: [skillId], references: [id])
+  skillId         Int // relation scalar field (used in the `@relation` attribute above)
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id])
+  workerProfileId Int // relation scalar field (used in the `@relation` attribute above)
+  description     String?
+  skillCategory   SkillCategory @relation(fields: [skillCategoryId], references: [id])
+  skillCategoryId Int
+
+  @@id([skillId, workerProfileId])
+}
+
+model Province {
+  code     String     @id
+  name     String
+  District District[]
+}
+
+model District {
+  code                      String                      @id
+  name                      String
+  province                  Province                    @relation(fields: [province_code], references: [code])
+  province_code             String
+  WorkerProfilesOnDistricts WorkerProfilesOnDistricts[]
+}
+
+model WorkerProfilesOnDistricts {
+  district        District      @relation(fields: [districtId], references: [code])
+  districtId      String // relation scalar field (used in the `@relation` attribute above)
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id])
+  workerProfileId Int // relation scalar field (used in the `@relation` attribute above)
+  description     String?
+
+  @@id([districtId, workerProfileId])
+}
+
+enum Role {
+  USER
+  WORKER
+}
